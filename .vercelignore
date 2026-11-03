@@ -1,0 +1,8 @@
+node_modules
+.vercel
+.env*
+server.log
+ask1.sse
+/data
+/scripts
+dev-server.mjs

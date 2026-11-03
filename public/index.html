@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>greptube</title>
+<meta name="description" content="Search inside the 500 YouTube videos Hacker News keeps recommending. Find the moment, not just the video. Built on HackerTube's open data, powered by Jockey from TwelveLabs.">
+<meta property="og:title" content="greptube: grep for the videos Hacker News loves">
+<meta property="og:description" content="Find the exact moment, ask questions across hundreds of talks, get a watch plan down to the minute.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://greptube.com/">
+<meta property="og:image" content="https://greptube.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="greptube: grep inside the videos Hacker News loves">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="greptube: grep inside the videos Hacker News loves">
+<meta name="twitter:description" content="Find the exact moment, ask questions across hundreds of talks, get a watch plan down to the minute.">
+<meta name="twitter:image" content="https://greptube.com/og.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23ff6a1a'/><path d='M12 9v14l11-7z' fill='white'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fbfaf8; --panel: #ffffff; --ink: #16130f; --muted: #6b645c; --faint: #a39b91;
+  --line: #ebe6df; --chip: #f3efe9; --accent: #ff6a1a; --accent-ink: #ffffff; --accent-soft: #fff0e6;
+  --cite: #0f6bd8; --cite-soft: #e8f1fd; --shadow: 0 1px 2px rgba(20,15,10,.06), 0 4px 16px rgba(20,15,10,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0e0d; --panel: #181614; --ink: #f2eee9; --muted: #a8a097; --faint: #6f6860;
+    --line: #2a2724; --chip: #23201d; --accent: #ff7a33; --accent-soft: #2e1c11; --cite: #6db0ff; --cite-soft: #14243a;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0e0d; --panel: #181614; --ink: #f2eee9; --muted: #a8a097; --faint: #6f6860;
+  --line: #2a2724; --chip: #23201d; --accent: #ff7a33; --accent-soft: #2e1c11; --cite: #6db0ff; --cite-soft: #14243a;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.bar { max-width: 1280px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 14px; align-items: center; }
+.logo { display: flex; align-items: center; gap: 8px; font-weight: 700; white-space: nowrap; }
+.logo .mark { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: grid; place-items: center; }
+.logo .mark svg { width: 13px; fill: white; }
+.logo small { font-weight: 500; color: var(--muted); }
+nav.top { margin-left: auto; display: flex; gap: 4px; }
+nav.top a { padding: 6px 10px; border-radius: 8px; color: var(--muted); font-weight: 500; }
+nav.top a:hover, nav.top a.on { background: var(--chip); color: var(--ink); }
+
+main { max-width: 1280px; margin: 0 auto; padding: 0 16px 80px; }
+
+/* hero + search */
+.hero { padding: 48px 0 28px; text-align: center; }
+.hero h1 { font-size: clamp(28px, 4.4vw, 46px); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 10px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { color: var(--muted); margin: 0 auto 26px; max-width: 640px; }
+.searchbox { max-width: 780px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 6px; }
+.modes { display: flex; gap: 4px; padding: 4px 4px 6px; }
+.modes button { border: 0; background: none; padding: 6px 12px; border-radius: 9px; color: var(--muted); font-weight: 600; font-size: 13.5px; }
+.modes button.on { background: var(--accent-soft); color: var(--accent); }
+.qrow { display: flex; gap: 6px; }
+.qrow textarea { flex: 1; resize: none; border: 0; outline: 0; background: none; color: var(--ink); font: 16px/1.45 Inter, sans-serif; padding: 10px 12px; min-height: 48px; max-height: 160px; }
+.qrow button.go { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; border-radius: 11px; padding: 0 18px; min-height: 44px; align-self: flex-end; }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 16px auto 0; max-width: 860px; }
+.examples button { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 12px; font-size: 13.5px; color: var(--muted); text-align: left; }
+.examples button:hover { color: var(--ink); border-color: var(--faint); }
+.examples button:nth-child(n+5) { display: none; } /* more chips push the watch plans off the first screen */
+
+/* video grid */
+.section-h { display: flex; align-items: baseline; gap: 12px; margin: 34px 0 14px; }
+.section-h h2 { font-size: 19px; margin: 0; }
+.section-h .sub { color: var(--muted); font-size: 13.5px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+.chips a { white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: var(--chip); font-size: 13.5px; font-weight: 500; }
+.chips a.on { background: var(--ink); color: var(--bg); }
+.grid { display: grid; gap: 22px 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.card .thumb { position: relative; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: var(--chip); }
+.card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.badge { position: absolute; right: 6px; bottom: 6px; background: rgba(0,0,0,.78); color: #fff; font: 500 12px "JetBrains Mono", monospace; padding: 2px 6px; border-radius: 5px; }
+.badge.left { left: 6px; right: auto; background: var(--accent); }
+.card h3 { font-size: 14.5px; line-height: 1.35; margin: 9px 0 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card .meta { color: var(--muted); font-size: 13px; }
+.card .quote { color: var(--muted); font-size: 13px; font-style: italic; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card .said { margin-top: 6px; font-size: 13px; background: var(--chip); border-radius: 8px; padding: 6px 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card .also { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+.card .also a { font: 500 12px "JetBrains Mono", monospace; color: var(--cite); background: var(--cite-soft); border-radius: 5px; padding: 1px 6px; }
+.card .also a:hover { text-decoration: underline; }
+.hero.compact { padding: 22px 0 0; }
+.more { display: block; margin: 26px auto 0; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 8px 18px; font-weight: 600; }
+
+/* answer */
+.answer-wrap { max-width: 860px; margin: 28px auto 0; }
+.qtitle { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 14px; }
+.progress { display: flex; flex-direction: column; gap: 4px; margin: 0 0 16px; font-size: 13px; color: var(--muted); }
+.progress .step::before { content: "›"; color: var(--accent); margin-right: 8px; }
+.progress .step[data-s]::after { content: " · " attr(data-s); color: var(--faint); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+.answer { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; box-shadow: var(--shadow); line-height: 1.65; }
+.answer p { margin: 0 0 12px; } .answer p:last-child { margin: 0; }
+.answer ul, .answer ol { padding-left: 22px; margin: 0 0 12px; } .answer li { margin: 4px 0 10px; }
+.answer li > p { margin: 4px 0 0; }
+.answer h3, .answer h4 { margin: 18px 0 8px; font-size: 16px; }
+.cite { display: inline-flex; align-items: center; gap: 5px; background: var(--cite-soft); color: var(--cite); border-radius: 6px; padding: 0 6px; font: 500 12.5px "JetBrains Mono", monospace; vertical-align: 1px; white-space: nowrap; }
+.cite:hover { text-decoration: underline; }
+.cite svg { width: 9px; fill: currentColor; }
+.cursor::after { content: "▍"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.sources { margin-top: 22px; }
+.sources h4 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; }
+.followup { display: flex; gap: 8px; margin-top: 18px; }
+.followup input { flex: 1; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 11px; padding: 10px 12px; font: inherit; }
+.followup button { border: 0; background: var(--ink); color: var(--bg); border-radius: 11px; padding: 0 16px; font-weight: 600; }
+
+/* watch */
+.watch { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; margin-top: 22px; }
+@media (max-width: 1000px) { .watch { grid-template-columns: 1fr; } }
+.player { aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #000; }
+.player iframe { width: 100%; height: 100%; border: 0; }
+.watch h1 { font-size: 20px; margin: 14px 0 4px; line-height: 1.3; }
+.watch .meta { color: var(--muted); font-size: 13.5px; }
+.actions { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.actions button { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 14px; font-weight: 500; font-size: 13.5px; }
+.actions button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-top: 12px; }
+.box h4 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.box blockquote { margin: 8px 0 0; font-style: italic; color: var(--muted); }
+.side .box form { display: flex; gap: 6px; }
+.side .box input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 9px; padding: 8px 10px; font: inherit; font-size: 14px; }
+.side .box button[type=submit] { border: 0; background: var(--accent); color: #fff; border-radius: 9px; padding: 0 12px; font-weight: 600; }
+.moments { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.moment { display: grid; grid-template-columns: 62px 1fr; gap: 8px; padding: 6px; border-radius: 8px; font-size: 13.5px; text-align: left; border: 0; background: none; }
+.moment:hover { background: var(--chip); }
+.moment.on { background: var(--accent-soft); }
+.moment.on .t { color: var(--accent); }
+.box .back { display: inline-block; margin-top: 8px; }
+.box .back:hover { color: var(--ink); }
+/* the moment list sits beside the player on wide screens and right under it on narrow ones */
+.watch .ctx-sm { display: none; }
+@media (max-width: 1000px) { .watch .ctx-sm { display: block; } .watch .ctx-lg { display: none; } }
+.moment .t { font: 500 12.5px "JetBrains Mono", monospace; color: var(--cite); }
+.side .answer { padding: 12px 14px; font-size: 14px; box-shadow: none; margin-top: 10px; }
+.upnext { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.upnext a { display: grid; grid-template-columns: 150px 1fr; gap: 10px; font-size: 13.5px; }
+.upnext img { width: 150px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; }
+/* HN comments on the watch page */
+.hn-c { padding: 12px 0; border-top: 1px solid var(--line); }
+.hn-c:first-of-type { border-top: 0; padding-top: 4px; }
+.hn-c .who { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.hn-c .who b { color: var(--ink); font-weight: 600; }
+.hn-c p { margin: 6px 0; font-size: 14px; overflow-wrap: anywhere; }
+.hn-c .vid { color: var(--accent); font-weight: 500; white-space: nowrap; }
+.hn-c .foot { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+.hn-c .foot a { color: var(--muted); }
+.hn-c .foot a:hover { color: var(--ink); }
+.stance { border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 600; background: var(--chip); color: var(--muted); }
+.stance.strong_rec { background: var(--accent-soft); color: var(--accent); }
+.hn-more { margin-top: 6px; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 14px; font-size: 13.5px; font-weight: 500; }
+.upnext h4 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.keym .moments { margin-top: 2px; gap: 2px; }
+.keym h4 small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+#pip { position: fixed; right: 16px; bottom: 16px; width: clamp(480px, 42vw, 680px); z-index: 20; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+#pip[hidden] { display: none; }
+.pip-bar { display: flex; align-items: center; gap: 4px; padding: 0 0 0 12px; background: #16130f; color: #f2eee9; font-size: 12.5px; }
+.pip-t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pip-open { color: #ff9a5c; font-weight: 600; white-space: nowrap; padding: 10px 8px; }
+.pip-x { border: 0; background: none; color: #f2eee9; font-size: 26px; line-height: 1; min-width: 48px; min-height: 44px; display: grid; place-items: center; } /* 44 px: the smallest target a fingertip hits reliably */
+.pip-x:hover, .pip-x:active { background: rgba(255,255,255,.12); }
+.pip-v { aspect-ratio: 16/9; } .pip-v iframe { width: 100%; height: 100%; border: 0; display: block; }
+body.pip-on main { padding-bottom: 420px; }
+/* a cut: clips played back to back in the floating player */
+#pip.reel { width: clamp(520px, 48vw, 760px); }
+body.reel-on main { padding-bottom: 540px; }
+.reel-ui:empty { display: none; }
+.reel-ui { background: #16130f; color: #f2eee9; padding: 6px 8px 10px; }
+.reel-row { display: flex; align-items: center; gap: 6px; }
+.reel-now { flex: 1; min-width: 0; font-size: 13px; line-height: 1.35; padding: 2px 4px; }
+.reel-now b { color: #ff9a5c; }
+.reel-now .note { color: #a59d93; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reel-nav { border: 0; background: rgba(255,255,255,.08); color: #f2eee9; font-size: 24px; min-width: 44px; min-height: 44px; border-radius: 10px; }
+.reel-nav:disabled { opacity: .3; }
+.reel-seg { display: flex; gap: 3px; margin-top: 8px; }
+.reel-seg button { height: 10px; border: 0; padding: 0; border-radius: 3px; background: rgba(255,255,255,.18); min-width: 10px; }
+.reel-seg button.past { background: rgba(255,154,92,.45); }
+.reel-seg button.on { background: #ff6a1a; }
+.reel-go { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; border: 0; background: var(--accent); color: #fff; border-radius: 12px; padding: 10px 16px; font-size: 15px; font-weight: 700; }
+.reel-go svg { width: 11px; fill: currentColor; }
+.reel-go small { font-weight: 500; opacity: .85; font-size: 12.5px; }
+.reel-go.playing { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cutbtn { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 10px 12px; font-weight: 600; width: 100%; text-align: left; min-height: 44px; }
+.own { margin: 10px 0 0; font-size: 12.5px; }
+.modes .sm { display: none; } /* so the player never hides the last results */
+a.playing .badge.left, .also a.playing, .cite.playing { outline: 2px solid var(--accent); outline-offset: 1px; }
+.powered { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--faint); }
+.powered a { color: var(--accent); font-weight: 600; }
+.powered { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.share { margin-left: auto; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px; font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.share-x { font-size: 12.5px; }
+.status { color: var(--muted); padding: 40px 0; text-align: center; }
+.note { font-size: 12.5px; color: var(--faint); }
+footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+footer .bar { display: block; padding: 22px 16px; }
+footer a { text-decoration: underline; }
+@media (max-width: 640px) {
+  nav.top a.hide-sm { display: none; }
+  .hero { padding-top: 28px; }
+  .hero.compact { padding-top: 14px; }
+  .logo small { display: none; }
+  .modes button { padding: 6px 7px; font-size: 13px; white-space: nowrap; }
+  .modes .lg { display: none; } .modes .sm { display: inline; }
+  .modes { gap: 2px; }
+  .reel-seg button { height: 14px; }
+  .qrow textarea { min-height: 70px; } /* the placeholder needs two lines at this width */
+  #pip, #pip.reel { left: 8px; right: 8px; bottom: 8px; width: auto; }
+}
+
+/* browse: topics page and the home filter bar */
+.browse-h .sub { white-space: nowrap; }
+.fbtn { margin-left: auto; white-space: nowrap; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.fbtn.on { color: var(--ink); border-color: var(--faint); }
+.fbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 4px 0 6px; font-size: 13px; color: var(--muted); }
+.fbar label { display: flex; align-items: center; gap: 6px; }
+.fbar select { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 5px 8px; font: inherit; font-size: 13px; }
+.fbar input { accent-color: var(--accent); }
+.fbar .clear { color: var(--accent); font-weight: 600; }
+.crumb { color: var(--muted); font-size: 13px; margin-top: 30px; }
+.crumb a:hover { color: var(--ink); text-decoration: underline; }
+.crumb + .section-h { margin-top: 4px; }
+.areas { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); margin-top: 8px; }
+.area { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.area h3 { margin: 0 0 10px; font-size: 15px; display: flex; gap: 8px; align-items: baseline; }
+.area h3 a:hover { color: var(--accent); }
+.area h3 span { color: var(--faint); font: 500 12.5px "JetBrains Mono", monospace; }
+.area .tl { display: flex; flex-wrap: wrap; gap: 6px; }
+.area .tl a { background: var(--chip); border-radius: 999px; padding: 4px 10px; font-size: 13px; }
+.area .tl a:hover { color: var(--accent); }
+.area .tl b { color: var(--faint); font: 500 11.5px "JetBrains Mono", monospace; margin-left: 4px; }
+@media (max-width: 640px) {
+  .areas { grid-template-columns: 1fr; }
+  .browse-h { flex-wrap: wrap; align-items: center; row-gap: 2px; }
+  .browse-h h2 { flex: 1 1 100%; }
+  .fbar label { flex: 1 1 calc(50% - 14px); }
+  .fbar select { flex: 1; min-width: 0; }
+}
+/* watch plans shelf */
+.plans { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.plan { display: block; border: 1px solid var(--line); background: var(--panel); border-radius: 14px; overflow: hidden; }
+.plan:hover { border-color: var(--faint); }
+.plan .strip { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; aspect-ratio: 4/1; background: var(--chip); }
+.plan .strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.plan .txt { padding: 12px 14px 14px; }
+.plan h3 { font-size: 15.5px; margin: 0 0 4px; line-height: 1.3; }
+.plan p { margin: 0 0 8px; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.plan .facts { font-size: 12.5px; font-weight: 600; color: var(--accent); }
+#plans-shelf .section-h { flex-wrap: wrap; row-gap: 2px; }
+#plans-shelf .section-h h2 { white-space: nowrap; }
+@media (max-width: 640px) {
+  .plans { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding-bottom: 6px; scrollbar-width: none; }
+  .plan { flex: 0 0 82%; scroll-snap-align: start; }
+}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <a class="logo" href="/"><span class="mark"><svg viewBox="0 0 10 12"><path d="M0 0v12l10-6z"/></svg></span><span class="mono">greptube</span> <small>· grep for the videos HN loves</small></a>
+  <nav class="top">
+    <a href="/" data-nav="home" class="hide-sm">Home</a>
+    <a href="/foryou" data-nav="foryou">For you</a>
+    <a href="/liked" data-nav="liked" class="hide-sm">Liked</a>
+    <a href="/later" data-nav="later" class="hide-sm">Later</a>
+    <a href="/topics" data-nav="topics">Topics</a>
+    <a href="/about" data-nav="about">About</a>
+  </nav>
+</div></header>
+<main id="view"></main>
+<div id="pip" hidden><div class="pip-bar"><span class="pip-t"></span><a class="pip-open" data-full href="/">Full page ↗</a><button class="pip-x" aria-label="Close player">×</button></div><div class="pip-v"></div><div class="reel-ui"></div></div>
+<footer><div class="bar">
+  The video list, summaries and HN quotes come from <a href="https://hackertube.org/data" target="_blank" rel="noopener">HackerTube's open dataset</a> by <a href="https://x.com/karpathy" target="_blank" rel="noopener">@karpathy</a>; this is an independent fan build, not affiliated with HackerTube.
+  Search and answers inside the videos by <a href="https://www.twelvelabs.io/jockey" target="_blank" rel="noopener">Jockey from TwelveLabs</a>. Videos play from YouTube.
+</div></footer>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const view = $("#view");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtT = (s) => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+const fmtDur = (s) => fmtT(s);
+const thumb = (vid) => `https://i.ytimg.com/vi/${vid}/hq2.jpg`;
+const PLAY = `<svg viewBox="0 0 10 12"><path d="M0 0v12l10-6z"/></svg>`;
+
+// local state, no login (same idea as HackerTube)
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem("hdw:" + k)) ?? []; } catch { return []; } },
+  set(k, v) { try { localStorage.setItem("hdw:" + k, JSON.stringify(v)); } catch {} },
+  toggle(k, vid) { const a = store.get(k); const i = a.indexOf(vid); i >= 0 ? a.splice(i, 1) : a.push(vid); store.set(k, a); return i < 0; },
+  has(k, vid) { return store.get(k).includes(vid); },
+};
+function markSeen(vid) { const h = store.get("history").filter((x) => x !== vid); h.push(vid); store.set("history", h.slice(-200)); }
+
+let VIDEOS = [], BY = new Map(), ITEMS = {}, READY_SET = new Set(), READY = 0, BAKED = {};
+async function boot() {
+  // The indexed-video list comes from a slow store listing on a cold server, so the page
+  // waits at most 2 s for it and fills it in when it lands.
+  const items = fetch("/api/items").then((r) => r.json()).then((d) => {
+    ITEMS = d.items || {}; READY_SET = new Set(d.ready || Object.values(ITEMS)); READY = READY_SET.size;
+  }).catch(() => {});
+  const [videos, baked] = await Promise.all([
+    fetch("/data/videos.json").then((r) => r.json()),
+    fetch("/data/examples.json").then((r) => r.json()).catch(() => ({})),
+  ]);
+  VIDEOS = videos; BY = new Map(VIDEOS.map((v) => [v.vid, v])); BAKED = baked;
+  let late = false;
+  await Promise.race([items, new Promise((r) => setTimeout(() => { late = true; r(); }, 2000))]);
+  // Pages rendered without it: home re-renders for the count; a video page only when it
+  // wrongly said "still being indexed", since re-rendering restarts the player.
+  items.then(() => {
+    if (!late) return;
+    const p = location.pathname;
+    if (p === "/" || (p.startsWith("/watch/") && indexed(p.slice(7)) && !$("#vfind"))) route();
+  });
+  addEventListener("popstate", route);
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href^='/']");
+    if (!a || e.metaKey || e.ctrlKey || a.target) return;
+    e.preventDefault();
+    // A timestamp never throws away the page it sits on: in the video already playing it
+    // seeks, anywhere else it plays in the floating player over the results or answer.
+    const href = a.getAttribute("href"), m = href.match(/^\/watch\/([^?]+)\?t=(\d+)/);
+    if (m) track("ts", href);
+    if (m && location.pathname === `/watch/${m[1]}`) return seek(m[1], Number(m[2]));
+    if (m && !a.hasAttribute("data-full") && !location.pathname.startsWith("/watch/")) return pip(href, a);
+    go(href);
+  });
+  $(".pip-x").onclick = closePip;
+  route();
+}
+function go(href) { history.pushState({}, "", href); route(); scrollTo(0, 0); }
+// Leaving a page cancels its in-flight answer, so it stops holding a slot on the server.
+let nav = new AbortController();
+function route() {
+  nav.abort(); nav = new AbortController();
+  closePip();
+  const u = new URL(location.href), p = u.pathname;
+  document.querySelectorAll("nav.top a").forEach((a) => a.classList.toggle("on", a.getAttribute("href") === p));
+  if (p === "/") return home(u.searchParams.get("c"));
+  if (p === "/search") return searchPage(u.searchParams.get("q") || "");
+  if (p === "/ask") return askPage(u.searchParams.get("q") || "", u.searchParams.get("mode") || "default");
+  if (p.startsWith("/watch/")) return watch(p.slice(7), Number(u.searchParams.get("t") || 0), u.searchParams);
+  if (p.startsWith("/plan/")) return planPage(decodeURIComponent(p.slice(6)));
+  if (p === "/foryou") return forYou();
+  if (p === "/liked") return listPage("Liked", store.get("liked").slice().reverse(), "Videos you like show up here. Likes also shape For you.");
+  if (p === "/later") return listPage("Watch later", store.get("later").slice().reverse(), "Nothing saved yet.");
+  if (p === "/about") return about();
+  if (p === "/topics") return topicsPage();
+  view.innerHTML = `<div class="status">Not found.</div>`;
+}
+
+const indexed = (vid) => READY_SET.has(vid);
+// `ctx` carries a result list into the video page (see byVideo), so opening one moment
+// doesn't lose the others.
+const tlink = (vid, t, ctx = "") => `/watch/${vid}?t=${Math.floor(t || 0)}${ctx && "&" + ctx}`;
+const card = (v, extra = {}) => {
+  const ctx = extra.ctx || "";
+  const href = extra.t != null ? tlink(v.vid, extra.t, ctx) : `/watch/${v.vid}`;
+  const also = (extra.also || []).slice().sort((a, b) => a.start - b.start);
+  return `<div class="card"><a href="${href}">
+    <div class="thumb"><img loading="lazy" src="${thumb(v.vid)}" onerror="this.src='https://i.ytimg.com/vi/${v.vid}/mqdefault.jpg'" alt="">
+      ${extra.t != null ? `<span class="badge left">▶ ${fmtT(extra.t)}${extra.end ? "–" + fmtT(extra.end) : ""}</span>` : ""}
+      <span class="badge">${fmtDur(v.duration_s)}</span></div>
+    <h3>${esc(v.title)}</h3></a>
+    <div class="meta">${esc(v.channel)} · ${v.hn?.recommenders || 0} HN recommenders</div>
+    ${also.length ? `<div class="also">also at ${also.slice(0, 6).map((m) => `<a href="${tlink(v.vid, m.start, ctx)}">${fmtT(m.start)}</a>`).join("")}${also.length > 6 ? `<span>+${also.length - 6}</span>` : ""}</div>` : ""}
+    ${extra.said ? `<div class="said">“${esc(extra.said)}”</div>` : v.quote?.text ? `<div class="quote">“${esc(v.quote.text)}”</div>` : ""}
+  </div>`;
+};
+// One card per video: the best moment on the thumbnail, the other hits as timestamps under it.
+// Twenty cards sharing one YouTube thumbnail read as a broken page. `q` is the search that
+// found them; without one the moments came from an answer's citations.
+function byVideo(moments, q = "") {
+  const g = new Map();
+  for (const m of moments) if (BY.get(m.vid)) (g.get(m.vid) || g.set(m.vid, []).get(m.vid)).push(m);
+  return [...g.entries()].map(([vid, all]) => {
+    const [best, ...rest] = all;
+    const m = all.slice().sort((a, b) => a.start - b.start).map((x) => `${Math.floor(x.start)}-${Math.ceil(x.end ?? x.start)}`).join(",");
+    const ctx = new URLSearchParams(q ? { m, q } : { m, cited: "1" }).toString();
+    return card(BY.get(vid), { t: best.start, end: best.end, said: best.transcription, also: rest, ctx });
+  });
+}
+
+// ---- home
+// Each was run and its answer read before it went here; phones show the first four.
+const EXAMPLES = [
+  { mode: "ask", q: "Which talks argue that simple beats clever, and how does each speaker make the case?" },
+  { mode: "cut", q: "Cut Karpathy's 1-hour Intro to Large Language Models talk down to 2 minutes" },
+  { mode: "cut", q: "One 3-minute video on how a computer chip is made, cut from several videos" },
+  { mode: "ask", q: "What does Karpathy say about jailbreaking LLMs with base64? Cite the moments." },
+  { mode: "ask", q: "Walk me through how a modern computer chip is made, step by step, pointing to the moment that shows each step." },
+  { mode: "watch", q: "I love retro computing and have 30 minutes. Give me the best moments from a few different videos." },
+  { mode: "ask", q: "How does Karpathy describe Tesla's approach to self-driving, and how does it differ between his talks?" },
+  { mode: "ask", q: "What does Children of the Magenta Line teach about automation, and how does it connect to what Karpathy says about self-driving?" },
+  { mode: "watch", q: "I have 45 minutes and want to really understand how LLMs work. Build me a watch plan with exact segments." },
+];
+// Answers lead: raw search also returns lookalike scenes, which read as misses to a first visitor.
+let mode = "ask";
+// Result pages get only the search box: the full hero would push the results below the fold.
+function hero(compact = false) {
+  return `<section class="hero${compact ? " compact" : ""}">
+    ${compact ? "" : `<h1><span class="mono">grep</span> <em>inside</em> the videos<br>Hacker News loves</h1>
+    <p>${VIDEOS.length} talks, lectures and documentaries HN has recommended for 19 years, watched end to end by <a href="/about"><u>Jockey</u></a>${READY && READY < VIDEOS.length ? ` (<b>${READY}</b> watched so far, more arriving this week)` : ""}. Find the exact moment, ask questions across all of them, or get a watch plan down to the minute.</p>`}
+    <div class="searchbox">
+      <div class="modes">
+        <button data-m="ask"><span class="lg">Ask the videos</span><span class="sm">Ask</span></button>
+        <button data-m="watch"><span class="lg">What to watch</span><span class="sm">Watch plan</span></button>
+        <button data-m="search"><span class="lg">Find a moment</span><span class="sm">Find</span></button>
+        <button data-m="cut">Make a cut</button>
+      </div>
+      <form class="qrow" id="qform"><textarea id="q" rows="1" placeholder=""></textarea><button class="go">Go</button></form>
+    </div>
+    ${compact ? "" : `<div class="examples">${EXAMPLES.map((e, i) => `<button data-ex="${i}">${{ search: "🔎", ask: "💬", watch: "🎬", cut: "✂️" }[e.mode]} ${esc(e.q)}</button>`).join("")}</div>`}
+  </section>`;
+}
+const PH = { search: "A topic, a talk, or a moment: what's said or shown", ask: "Ask a question the videos can answer", watch: "What are you into? How much time do you have?", cut: "Cut a 1-hour talk to 2 minutes, or several videos into one" };
+const MAXQ = { search: 300, ask: 1200, watch: 1200, cut: 1200 }; // the API's limits; past them it answers 400
+function wireHero() {
+  const setMode = (m) => { mode = m; document.querySelectorAll(".modes button").forEach((b) => b.classList.toggle("on", b.dataset.m === m)); $("#q").placeholder = PH[m]; $("#q").maxLength = MAXQ[m]; };
+  document.querySelectorAll(".modes button").forEach((b) => b.onclick = () => { setMode(b.dataset.m); $("#q").focus(); });
+  setMode(mode);
+  const ta = $("#q");
+  ta.oninput = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
+  ta.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#qform").requestSubmit(); } };
+  $("#qform").onsubmit = (e) => { e.preventDefault(); const q = ta.value.trim().slice(0, MAXQ[mode]); if (q) submit(mode, q); };
+  document.querySelectorAll("[data-ex]").forEach((b) => b.onclick = () => { const ex = EXAMPLES[b.dataset.ex]; submit(ex.mode, ex.q); });
+}
+function submit(m, q) {
+  if (m === "search") go(`/search?q=${encodeURIComponent(q)}`);
+  else go(`/ask?mode=${m === "watch" || m === "cut" ? m : "default"}&q=${encodeURIComponent(q)}`);
+}
+
+function areas() {
+  const c = new Map();
+  for (const v of VIDEOS) { const a = v.categories?.[0]?.area_name; if (a) c.set(a, (c.get(a) || 0) + 1); }
+  return [...c.entries()].sort((a, b) => b[1] - a[1]).map(([a]) => a);
+}
+function home() {
+  document.title = "greptube";
+  mode = "ask";
+  view.innerHTML = hero() + `<div id="plans-shelf"></div><div id="browse"></div>`;
+  wireHero();
+  browse();
+  if (!location.search) plansShelf();
+}
+
+// ---- browse: topic pages and filters
+// Every choice lives in the URL so a filtered view can be shared. A filter change redraws
+// only the grid: re-rendering the hero would wipe what the visitor was typing.
+const LEN = { short: [0, 1200, "Under 20 min"], mid: [1200, 3600, "20–60 min"], long: [3600, Infinity, "Over 1 hour"] };
+const DEC = { "2020s": "202", "2010s": "201", "2000s": "200" };
+const SORTS = { best: "Best first", recs: "Most HN recommenders", new: "Newest", views: "Most viewed" };
+let filtersOpen = false;
+function browseOpts() {
+  const s = new URLSearchParams(location.search), pick = (k, ok) => (ok[s.get(k)] ? s.get(k) : null);
+  const types = Object.fromEntries(VIDEOS.map((v) => [v.content_type, 1]));
+  const topic = s.get("topic"), cat = topic && VIDEOS.flatMap((v) => v.categories || []).find((c) => c.id === topic);
+  return { area: cat ? cat.area_name : s.get("c"), topic: cat ? topic : null, topicName: cat?.name, type: pick("type", types), len: pick("len", LEN), dec: pick("dec", DEC), idx: s.get("idx") === "1", sort: pick("sort", SORTS) || "best" };
+}
+function browseList(o) {
+  const list = VIDEOS.filter((v) => (!o.area || v.categories?.some((c) => c.area_name === o.area))
+    && (!o.topic || v.categories?.some((c) => c.id === o.topic)) && (!o.type || v.content_type === o.type)
+    && (!o.len || (v.duration_s >= LEN[o.len][0] && v.duration_s < LEN[o.len][1]))
+    && (!o.dec || (v.published || "").startsWith(DEC[o.dec])) && (!o.idx || indexed(v.vid)));
+  const key = { recs: (v) => v.hn?.recommenders || 0, new: (v) => Date.parse(v.published) || 0, views: (v) => v.views || 0 }[o.sort];
+  return key ? list.slice().sort((a, b) => key(b) - key(a)) : list;
+}
+// The filters other than area and topic, so switching area keeps them.
+function browseHref(o, set = {}) {
+  const n = { ...o, ...set }, s = new URLSearchParams();
+  if (n.topic) s.set("topic", n.topic); else if (n.area) s.set("c", n.area);
+  for (const k of ["type", "len", "dec"]) if (n[k]) s.set(k, n[k]);
+  if (n.idx) s.set("idx", "1");
+  if (n.sort && n.sort !== "best") s.set("sort", n.sort);
+  return "/" + (s.toString() ? "?" + s : "");
+}
+function browse() {
+  const o = browseOpts(), list = browseList(o);
+  const active = ["type", "len", "dec", "idx"].filter((k) => o[k]).length + (o.sort !== "best");
+  const types = [...VIDEOS.reduce((m, v) => m.set(v.content_type, (m.get(v.content_type) || 0) + 1), new Map())].sort((a, b) => b[1] - a[1]);
+  const sel = (k, label, opts, any = true) => `<label>${label}<select data-f="${k}">${any ? `<option value="">Any</option>` : ""}${opts.map(([v, t]) => `<option value="${esc(v)}"${o[k] === v ? " selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  const title = o.topicName || o.area || "Most recommended on HN";
+  $("#browse").innerHTML = `
+    ${o.topic ? `<div class="crumb"><a href="/topics">Topics</a> › <a href="${browseHref(o, { topic: null })}">${esc(o.area)}</a></div>` : ""}
+    <div class="section-h browse-h"><h2>${esc(title)}</h2><span class="sub">${list.length} video${list.length === 1 ? "" : "s"}</span>
+      <button class="fbtn${active ? " on" : ""}" id="fbtn" aria-expanded="${filtersOpen || !!active}">Filters${active ? ` · ${active}` : ""}</button></div>
+    <div class="fbar" id="fbar"${filtersOpen || active ? "" : " hidden"}>
+      ${sel("type", "Type", types.map(([t, n]) => [t, `${t[0].toUpperCase() + t.slice(1)} (${n})`]))}
+      ${sel("len", "Length", Object.entries(LEN).map(([k, v]) => [k, v[2]]))}
+      ${sel("dec", "Uploaded", Object.keys(DEC).map((k) => [k, k]))}
+      ${sel("sort", "Sort", Object.entries(SORTS), false)}
+      <label><input type="checkbox" data-f="idx"${o.idx ? " checked" : ""}${READY ? "" : " disabled"}> Watched by Jockey${READY ? ` (${READY})` : ""}</label>
+      ${active ? `<a class="clear" href="${browseHref({ area: o.area, topic: o.topic })}">Clear</a>` : ""}
+    </div>
+    <div class="chips"><a href="${browseHref(o, { area: null, topic: null })}" class="${o.area ? "" : "on"}">All</a>${areas().map((a) => `<a href="${browseHref(o, { area: a, topic: null })}" class="${a === o.area ? "on" : ""}">${esc(a)}</a>`).join("")}<a href="/topics">All topics →</a></div>
+    <div class="grid" id="grid" style="margin-top:14px"></div>${list.length ? `<button class="more" id="more">Show more</button>` : `<div class="status">No videos match these filters. <a href="${browseHref({ area: o.area, topic: o.topic })}"><u>Clear filters</u></a></div>`}`;
+  $("#fbtn").onclick = () => { filtersOpen = $("#fbar").hidden; $("#fbar").hidden = !filtersOpen; $("#fbtn").setAttribute("aria-expanded", filtersOpen); };
+  document.querySelectorAll("#fbar [data-f]").forEach((el) => el.onchange = () => {
+    const f = el.dataset.f;
+    history.pushState({}, "", browseHref(o, { [f]: f === "idx" ? el.checked : el.value || null }));
+    filtersOpen = true; browse();
+  });
+  let n = 0;
+  const more = () => { $("#grid").insertAdjacentHTML("beforeend", list.slice(n, n + 36).map((v) => card(v)).join("")); n += 36; if (n >= list.length) $("#more")?.remove(); };
+  if (list.length) { $("#more").onclick = more; more(); }
+}
+function topicsPage() {
+  document.title = "Topics - greptube";
+  const byArea = new Map();
+  for (const v of VIDEOS) for (const c of v.categories || []) {
+    const a = byArea.get(c.area_name) || byArea.set(c.area_name, { n: new Set(), topics: new Map() }).get(c.area_name);
+    a.n.add(v.vid);
+    const t = a.topics.get(c.id) || a.topics.set(c.id, { name: c.name, n: 0 }).get(c.id);
+    t.n++;
+  }
+  const list = [...byArea].sort((a, b) => b[1].n.size - a[1].n.size);
+  view.innerHTML = `<div class="section-h"><h2>Topics</h2><span class="sub">${list.reduce((s, [, a]) => s + a.topics.size, 0)} topics in ${list.length} areas, from HackerTube's taxonomy</span></div>
+    <div class="areas">${list.map(([name, a]) => `<div class="area"><h3><a href="/?c=${encodeURIComponent(name)}">${esc(name)}</a><span>${a.n.size}</span></h3>
+      <div class="tl">${[...a.topics].sort((x, y) => y[1].n - x[1].n).map(([id, t]) => `<a href="/?topic=${encodeURIComponent(id)}">${esc(t.name)}<b>${t.n}</b></a>`).join("")}</div></div>`).join("")}</div>`;
+}
+
+// ---- video match: finds videos by topic from the catalog text, before the moment search
+// answers. The moment index only sees inside videos, so a topic query ("floppy disk") gets
+// lookalike scenes from it; the catalog knows which videos are *about* the topic.
+const STOP = new Set("a an the of in on at to for and or about how what why who is are was were do does with by from into vs video videos".split(" "));
+const stem = (w) => w.length > 4 && w.endsWith("ies") ? w.slice(0, -3) + "y"
+  : w.length > 4 && /(ss|us|is)$/.test(w) ? w
+  : w.length > 3 && w.endsWith("es") && /(s|x|z|ch|sh)es$/.test(w) ? w.slice(0, -2)
+  : w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w;
+const words = (s) => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9+#]+/g, " ").trim();
+const toks = (s) => words(s).split(" ").filter(Boolean).map(stem);
+// Title, tags and topic say what a video is about; the summary and HN's reasons mention
+// neighbouring things too, so they count for less.
+const FIELDS = [["title", 6], ["tags", 5], ["topic", 5], ["channel", 4], ["cats", 3], ["summary", 2], ["why", 1.5], ["quote", 1]];
+let MATCH_INDEX = null;
+function matchIndex() {
+  if (MATCH_INDEX?.n === VIDEOS.length) return MATCH_INDEX.rows;
+  const rows = VIDEOS.map((v) => {
+    const text = { title: v.title, tags: (v.tags || []).join(" , "), topic: v.primary_topic, channel: v.channel,
+      cats: (v.categories || []).map((c) => c.name).join(" , "), summary: v.summary, why: v.why_hn, quote: v.quote?.text };
+    const f = {};
+    for (const [k] of FIELDS) f[k] = { set: new Set(toks(text[k])), flat: " " + toks(text[k]).join(" ") + " " };
+    return { v, f };
+  });
+  MATCH_INDEX = { n: VIDEOS.length, rows };
+  return rows;
+}
+function matchVideos(q) {
+  const terms = [...new Set(toks(q).filter((t) => !STOP.has(t)))];
+  if (!terms.length) return [];
+  const phrase = terms.length > 1 ? " " + toks(q).join(" ") + " " : null;
+  const scored = [];
+  for (const { v, f } of matchIndex()) {
+    let rel = 0, hit = 0;
+    for (const t of terms) {
+      let best = 0, extra = 0;
+      for (const [k, w] of FIELDS) {
+        const s = f[k].set.has(t) ? w : t.length >= 4 && f[k].flat.includes(" " + t) ? w * 0.5 : 0;
+        if (s > best) { extra += best; best = s; } else extra += s;
+      }
+      if (best) { hit++; rel += best + 0.15 * extra; }
+    }
+    if (!hit) continue;
+    if (phrase) for (const [k, w] of [["title", 8], ["tags", 6], ["topic", 6], ["summary", 3]]) if (f[k].flat.includes(phrase)) { rel += w; break; }
+    // a lone summary or quote mention is a passing reference, not what the video is about
+    if (rel < 3) continue;
+    scored.push({ v, rel: rel * (hit / terms.length) ** 2, full: hit === terms.length });
+  }
+  // Partial matches only fill in when few videos match every word: "simple made easy" would
+  // otherwise list every video whose summary says "easy".
+  const full = scored.filter((s) => s.full);
+  const pool = full.length >= 3 ? full : scored;
+  // and a strong title match ("simple made easy") shouldn't trail a list of one-word hits
+  const top = Math.max(0, ...pool.map((s) => s.rel));
+  return pool.filter((s) => s.rel >= top / 4)
+    .sort((a, b) => b.rel + 0.04 * (b.v.score || 0) - (a.rel + 0.04 * (a.v.score || 0)))
+    .map((s) => s.v);
+}
+
+// ---- watch plans
+// Ready-made watch plans: our answer to HackerTube's hand-ordered playlists, cut down to the
+// segments worth watching. Each ships with a recorded answer (scripts/bake_plans.mjs), which
+// joins BAKED so opening one is instant and its follow-ups work like any other answer.
+let plansLoad;
+function loadPlans() {
+  plansLoad ??= fetch("/data/plans.json").then((r) => r.json()).catch(() => []).then((plans) => {
+    plans = plans.filter((p) => p.stream && p.vids?.length);
+    for (const p of plans) BAKED[`watch|${p.q}`] = p.stream;
+    return plans;
+  });
+  return plansLoad;
+}
+async function plansShelf() {
+  const plans = await loadPlans(), el = $("#plans-shelf");
+  if (!el || !plans.length) return;
+  el.innerHTML = `<div class="section-h"><h2>Watch plans</h2><span class="sub">just the parts worth watching, picked by Jockey</span></div>
+    <div class="plans">${plans.map((p) => `<a class="plan" href="/plan/${encodeURIComponent(p.id)}">
+      <div class="strip">${p.vids.slice(0, 4).map((v) => `<img loading="lazy" src="${thumb(v)}" onerror="this.src='https://i.ytimg.com/vi/${v}/mqdefault.jpg'" alt="">`).join("")}</div>
+      <div class="txt"><h3>${esc(p.title)}</h3><p>${esc(p.pitch)}</p><div class="facts">${p.minutes ? `${p.minutes} min · ` : ""}${p.vids.length} videos</div></div>
+    </a>`).join("")}</div>`;
+}
+async function planPage(id) {
+  const p = (await loadPlans()).find((x) => x.id === id);
+  if (!p) return toHome();
+  // The prompt behind a plan is long and written for Jockey; the box stays free for the visitor.
+  const done = askPage(p.q, "watch", { title: p.title });
+  $("#q").value = ""; $("#q").oninput();
+  return done;
+}
+
+// ---- moment search
+function toHome() { history.replaceState({}, "", "/"); route(); }
+async function searchPage(q) {
+  q = q.trim().slice(0, MAXQ.search);
+  if (!q) return toHome();
+  document.title = `${q} - greptube`;
+  mode = "search";
+  const vids = matchVideos(q);
+  view.innerHTML = hero(true) + `<div id="vres"></div><div id="res"><div class="status">Searching inside ${READY ? READY + " videos" : "the videos"}…</div></div>`;
+  wireHero(); $("#q").value = q; $("#q").oninput();
+  // phones stack cards one per row, so six would push the moments a few screens down
+  const first = matchMedia("(max-width: 640px)").matches ? 3 : 6;
+  if (vids.length) {
+    $("#vres").innerHTML = `<div class="section-h"><h2>Videos</h2><span class="sub">${vids.length} about this</span></div><div class="grid" id="vgrid"></div>${vids.length > first ? `<button class="more" id="vmore">Show all ${vids.length}</button>` : ""}`;
+    $("#vgrid").innerHTML = vids.slice(0, first).map((v) => card(v)).join("");
+    if ($("#vmore")) $("#vmore").onclick = () => { $("#vgrid").innerHTML = vids.slice(0, 48).map((v) => card(v)).join(""); $("#vmore").remove(); };
+  }
+  let r;
+  try { r = await fetch("/api/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }), signal: nav.signal }); }
+  catch (e) { if (e.name === "AbortError") return; r = { ok: false }; }
+  if (r.status === 429) return $("#res").innerHTML = `<div class="status">Easy there. Give it a few seconds.</div>`;
+  if (!r.ok) return $("#res").innerHTML = `<div class="status">Search hit a snag. Try again in a moment.</div>`;
+  const { results } = await r.json();
+  const cards = byVideo(results, q);
+  if (!cards.length) return $("#res").innerHTML = vids.length ? "" : `<div class="status">No moments matched. Try describing what's said or shown.</div>`;
+  $("#res").innerHTML = `<div class="section-h"><h2>${vids.length ? "Moments inside" : "Moments"}</h2><span class="sub">${results.length} in ${cards.length} videos · click to jump straight there</span></div>
+    <div class="grid">${cards.join("")}</div>
+    <p class="note" style="margin-top:22px">HackerTube's search matches what HN commenters <i>wrote about</i> a video. These matches come from <i>inside</i> the videos: what's said and what's on screen.</p>`;
+}
+
+// ---- grounded answers (streamed)
+const STEP_LABELS = { search: "Searching the videos", read: "Watching the clips", answer: "Writing the answer" };
+// One anonymous line per event in the server log: did a visitor reach a moment, or share?
+function track(e, h = "") {
+  try { navigator.sendBeacon("/api/ev", JSON.stringify({ e, p: location.pathname, h })); } catch {}
+}
+async function share(btn, title) {
+  const url = location.href;
+  track("share", url);
+  if (navigator.share) return navigator.share({ title, url }).catch(() => {});
+  await navigator.clipboard?.writeText(url).catch(() => {});
+  btn.textContent = "Link copied";
+  if (!btn.nextElementSibling) btn.insertAdjacentHTML("afterend", `<a class="share-x" target="_blank" rel="noopener" href="https://x.com/intent/post?${new URLSearchParams({ text: `"${title}" — asked the videos HN loves`, url })}">Post on X ↗</a>`);
+}
+async function askPage(q, m, opts = {}) {
+  q = q.trim().slice(0, MAXQ.ask);
+  if (!q) return opts.into ? undefined : toHome();
+  // `title` is what the visitor typed when the page built a longer prompt around it.
+  const shown = opts.title || q;
+  document.title = `${shown} - greptube`;
+  mode = m === "watch" || m === "cut" ? m : "ask";
+  if (!opts.into) {
+    view.innerHTML = hero(true) + `<div class="answer-wrap" id="thread"></div>`;
+    wireHero(); $("#q").value = q; $("#q").oninput();
+  }
+  const thread = opts.into || $("#thread");
+  const turn = document.createElement("div");
+  turn.innerHTML = `<h2 class="qtitle">${esc(shown)}</h2><div class="progress"></div><div class="answer"><span class="body cursor"></span><div class="powered">Answered by <a href="https://www.twelvelabs.io/jockey" target="_blank" rel="noopener">Jockey</a> · every claim cited to the second</div></div><div class="sources"></div>`;
+  thread.appendChild(turn);
+  if (m === "cut") $(".powered", turn).insertAdjacentHTML("afterend", OWN_VIDEOS);
+  if (!opts.into && !opts.vid) {
+    const b = document.createElement("button"); b.className = "share"; b.textContent = "Share";
+    b.onclick = () => share(b, shown);
+    $(".powered", turn).appendChild(b);
+  }
+  await streamAnswer({ q, mode: m, vid: opts.vid, session_id: opts.session_id }, turn, (sid) => {
+    if (opts.vid) return;
+    const f = document.createElement("form"); f.className = "followup";
+    f.innerHTML = `<input placeholder="Ask a follow-up…"><button>Ask</button>`;
+    f.onsubmit = (e) => { e.preventDefault(); const v = f.querySelector("input").value.trim(); if (!v) return; f.remove(); askPage(v, m, { into: thread, session_id: sid }); };
+    thread.appendChild(f);
+  });
+}
+
+// Streams /api/ask into `turn`. Text deltas render live; on completion the [n] markers
+// are swapped for clickable timestamp chips using the final response's annotations.
+async function streamAnswer(payload, turn, done) {
+  const body = $(".body", turn), prog = $(".progress", turn), sources = $(".sources", turn);
+  const steps = new Set();
+  const addStep = (label) => { if (steps.has(label)) return; steps.add(label); prog.insertAdjacentHTML("beforeend", `<div class="step">${esc(label)}</div>`); };
+  // Jockey sends the answer in one piece at the end, so the wait is narrated on a timer.
+  const t0 = Date.now(), plan = [[0, `Searching inside ${READY ? READY + " videos" : "the videos"}`], [8, "Watching the matching clips"], [25, "Cross-checking moments across videos"], [50, "Checking every claim against the footage"]];
+  const tick = setInterval(() => {
+    const s = (Date.now() - t0) / 1000;
+    for (const [at, label] of plan) if (s >= at) addStep(label);
+    const last = prog.lastElementChild; if (last) last.dataset.s = Math.floor(s) + "s";
+  }, 500);
+  addStep(plan[0][1]);
+  // Example questions ship with recorded answers (scripts/bake_examples.mjs), so the
+  // first click is instant no matter which function instance would have served it.
+  // Answers seen in this tab are kept too, so Back doesn't pay for the same answer twice.
+  const ckey = !payload.session_id && !payload.vid ? `ans:${payload.mode || "default"}|${payload.q}` : null;
+  let seen = null; try { seen = ckey && sessionStorage.getItem(ckey); } catch {}
+  const baked = ckey && (BAKED[ckey.slice(4)]?.join("") || seen);
+  const signal = nav.signal;
+  const fail = (msg) => { clearInterval(tick); prog.innerHTML = ""; body.classList.remove("cursor"); body.textContent = msg; };
+  let r;
+  try { r = baked ? new Response(baked, { status: 200 }) : await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload), signal }); }
+  catch (e) { return e.name === "AbortError" ? clearInterval(tick) : fail("That one hit a snag. Try again."); }
+  if (!r.ok) return fail(r.status === 429 ? "Easy there. Give it a few seconds." : r.status === 503 ? "Lots of people asking right now. Try again in a minute." : "That one hit a snag. Try again.");
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  let buf = "", raw = "", text = "", final = null;
+  for (;;) {
+    let chunk;
+    try { chunk = await reader.read(); } catch (e) { return e.name === "AbortError" ? clearInterval(tick) : fail("That one hit a snag. Try again."); }
+    const { value, done: end } = chunk;
+    if (end) break;
+    const s = dec.decode(value, { stream: true });
+    buf += s; raw += s;
+    let i;
+    while ((i = buf.indexOf("\n\n")) >= 0) {
+      const raw = buf.slice(0, i); buf = buf.slice(i + 2);
+      const data = raw.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("\n");
+      if (!data || data === "[DONE]") continue;
+      let ev; try { ev = JSON.parse(data); } catch { continue; }
+      const t = ev.type || "";
+      if (t.endsWith("output_text.delta")) { text += ev.delta || ""; body.innerHTML = md(text); }
+      else if (t === "response.completed" || t === "response.done") final = ev.response || ev;
+      else if (t === "step" && ev.name) addStep(toolLabel(ev.name));
+      else if (t === "error") { body.textContent = "That one hit a snag. Try again."; }
+    }
+  }
+  clearInterval(tick);
+  { const secs = Math.round((Date.now() - t0) / 1000); prog.insertAdjacentHTML("beforeend", `<div class="step">${secs < 2 ? "Answered before, served instantly" : `Done in ${secs}s`}</div>`); }
+  body.classList.remove("cursor");
+  if (final) {
+    if (ckey && !baked) try { sessionStorage.setItem(ckey, raw); } catch {}
+    const { answer, anns } = collect(final);
+    body.innerHTML = renderCited(answer || text, anns, payload.vid);
+    const cited = anns.filter((a) => a.type === "video_citation" && vidOf(a)).map((a) => ({ vid: vidOf(a), start: a.start_sec ?? 0, end: a.end_sec }));
+    const cards = byVideo(cited.filter((m, i) => cited.findIndex((x) => x.vid === m.vid && x.start === m.start) === i));
+    if (cards.length) sources.innerHTML = `<h4>Cited moments</h4><div class="grid">${cards.slice(0, 12).join("")}</div>`;
+    reelButton(turn, answer || text, anns, payload);
+    done && done(final.session_id);
+  }
+}
+// The server resolves each citation to a video; the map from page load is the fallback
+// for answers recorded before it did.
+const vidOf = (a) => (a.vid && BY.get(a.vid) ? a.vid : BY.get(ITEMS[a.item_id]) ? ITEMS[a.item_id] : null);
+function toolLabel(name) {
+  const n = name.toLowerCase();
+  if (n.includes("search")) return "Searching inside the videos";
+  if (n.includes("transcript")) return "Reading transcripts";
+  if (n.includes("qa") || n.includes("watch") || n.includes("visual") || n.includes("frame")) return "Watching the clips";
+  return "Working: " + name.replace(/_/g, " ");
+}
+function collect(resp) {
+  let answer = "", anns = [], off = 0;
+  for (const item of resp.output || []) {
+    if (item.type !== "message") continue;
+    for (const part of item.content || []) {
+      if (part.type !== "output_text" || part.text == null) continue;
+      for (const a of part.annotations || []) anns.push({ ...a, start_index: a.start_index != null ? a.start_index + off : null, end_index: a.end_index != null ? a.end_index + off : null });
+      answer += (answer ? "\n" : "") + part.text; off = answer.length + 1;
+    }
+  }
+  return { answer, anns };
+}
+// Replace located citation markers with chips, then render markdown around them.
+// `here` is the video on screen; its chips show only the time, since its title is right above.
+function renderCited(text, anns, here) {
+  const located = anns.filter((a) => a.start_index != null && a.end_index != null).sort((a, b) => b.start_index - a.start_index);
+  // A chip names its video only when the video changes from the chip before it; repeating
+  // the title on every claim of a single-video answer buries the answer.
+  const titled = new Set();
+  located.slice().reverse().reduce((prev, a) => { const v = vidOf(a); if (v && v !== prev) titled.add(a); return v || prev; }, null);
+  const chips = [];
+  let s = [...text]; // code points, as the wire indexes them
+  for (const a of located) {
+    let chip = "";
+    const vid = a.type === "video_citation" && vidOf(a);
+    if (vid) {
+      const v = BY.get(vid), t = a.start_sec ?? 0;
+      chip = `<a class="cite" href="${tlink(vid, t)}" title="${esc(v.title)}">${PLAY}${fmtT(t)}${vid !== here && titled.has(a) ? " " + esc(short(v.title)) : ""}</a>`;
+    } else if (a.type === "url_citation" && /^https?:/.test(a.url)) {
+      chip = `<a class="cite" href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.title || new URL(a.url).hostname)}</a>`;
+    }
+    chips.push(chip);
+    s.splice(a.start_index, a.end_index - a.start_index + 1, `\u0000${chips.length - 1}\u0000`);
+  }
+  return md(s.join("")).replace(/\u0000(\d+)\u0000/g, (_, i) => chips[i]);
+}
+// Titles are "Speaker - Talk" as often as "Talk | Channel", so keep the longest piece, not the first.
+const short = (t) => { t = String(t || "").split(/\s[|\-–—]\s/).reduce((a, b) => (b.trim().length > a.length ? b.trim() : a), ""); return t.length > 34 ? t.slice(0, 32) + "…" : t; };
+function md(src) {
+  const lines = esc(src).split("\n"), out = []; let list = null;
+  const inline = (l) => l.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/(^|\W)\*(.+?)\*(?=\W|$)/g, "$1<i>$2</i>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const UL = /^\s*[-*]\s+(.*)/, OL = /^\s*\d+[.)]\s+(.*)/, H = /^#{1,4}\s+(.*)/;
+  // Whether another item of this list comes before the next heading. A paragraph between
+  // two items (a watch plan's "why watch this" line) belongs to the item above it; closing
+  // the list there would restart the numbering at 1 for every item.
+  const moreItems = (from, re) => { for (const l of lines.slice(from + 1)) { if (re.test(l)) return true; if (H.test(l)) return false; } return false; };
+  for (const [i, l] of lines.entries()) {
+    const ul = l.match(UL), ol = l.match(OL), h = l.match(H);
+    // Bullets under a numbered step nest inside it; as a separate list they'd restart the numbering.
+    if (ul && list === "ol" && (/^\s/.test(l) || moreItems(i, OL))) {
+      const last = out.length - 1, li = `<li>${inline(ul[1])}</li>`;
+      out[last] = /<\/ul><\/li>$/.test(out[last]) ? out[last].replace(/<\/ul><\/li>$/, `${li}</ul></li>`) : out[last].replace(/<\/li>$/, `<ul>${li}</ul></li>`);
+      continue;
+    }
+    if (ul || ol) { const tag = ul ? "ul" : "ol"; if (list !== tag) { if (list) out.push(`</${list}>`); out.push(`<${tag}>`); list = tag; } out.push(`<li>${inline((ul || ol)[1])}</li>`); continue; }
+    if (!l.trim()) continue; // a blank line between items must not restart an <ol> at 1
+    // A bold-only item is a title, so the next paragraph is its body even after the last item.
+    const titleOnly = list && /^<li><b>.*<\/b><\/li>$/.test(out[out.length - 1]);
+    if (list && !h && (titleOnly || moreItems(i, list === "ol" ? OL : UL))) { out[out.length - 1] = out[out.length - 1].replace(/<\/li>$/, `<p>${inline(l)}</p></li>`); continue; }
+    if (list) { out.push(`</${list}>`); list = null; }
+    if (h) out.push(`<h3>${inline(h[1])}</h3>`); else if (l.trim()) out.push(`<p>${inline(l)}</p>`);
+  }
+  if (list) out.push(`</${list}>`);
+  return out.join("");
+}
+
+// ---- one video from many clips
+// The clips play back to back as embedded YouTube segments rather than as a rendered file:
+// nothing is re-hosted, and the cut starts instantly.
+const OWN_VIDEOS = `<p class="note own">Do this with your own videos: <a href="https://www.twelvelabs.io/jockey" target="_blank" rel="noopener"><u>Jockey's Responses API, or Jockey in Claude via MCP</u></a></p>`;
+const CLIP_DEFAULT = 30; // seconds, for a citation without an end
+function clipsOf(text, anns) {
+  const cps = [...text], seen = new Set(), out = [];
+  for (const a of anns.filter((a) => a.type === "video_citation" && vidOf(a)).sort((a, b) => (a.start_index ?? 0) - (b.start_index ?? 0))) {
+    const vid = vidOf(a), start = a.start_sec ?? 0;
+    const end = a.end_sec > start + 2 ? a.end_sec : start + CLIP_DEFAULT;
+    if (seen.has(`${vid}@${Math.floor(start)}`)) continue;
+    seen.add(`${vid}@${Math.floor(start)}`);
+    // The label is the line the citation sits in: its bold part if it has one.
+    let label = "";
+    if (a.start_index != null) {
+      let i = a.start_index, j = a.start_index;
+      while (i > 0 && cps[i - 1] !== "\n") i--;
+      while (j < cps.length && cps[j] !== "\n") j++;
+      const line = cps.slice(i, a.start_index).join("");
+      label = (line.match(/\*\*(.+?)\*\*/)?.[1] || line.replace(/^\s*(\d+[.)]|[-*])\s*/, "").replace(/\[\d+\]/g, "")).replace(/[*_`]/g, "").trim();
+    }
+    label = (label || short(BY.get(vid).title)).replace(/[.:;,]+$/, "");
+    if (label.length > 72) label = label.slice(0, 72).replace(/\s+\S*$/, "") + "…";
+    out.push({ vid, start, end, label });
+  }
+  return out;
+}
+function reelButton(turn, text, anns, payload) {
+  const clips = clipsOf(text, anns);
+  if (!(payload.mode === "cut" ? clips.length >= 1 : payload.mode === "watch" && clips.length >= 2)) return;
+  const total = clips.reduce((s, c) => s + (c.end - c.start), 0);
+  const vids = new Set(clips.map((c) => c.vid)).size;
+  const b = document.createElement("button"); b.className = "reel-go";
+  b.innerHTML = `${PLAY} Play as one video · ${fmtT(total)}<small>${clips.length} clips${vids > 1 ? ` from ${vids} videos` : ""}</small>`;
+  b.onclick = () => playReel(clips, $(".qtitle", turn)?.textContent || "Your cut", b);
+  const ans = $(".answer", turn); ans.insertBefore(b, ans.firstChild);
+}
+let YTP, reel = null;
+const ytApi = () => YTP ??= new Promise((res) => {
+  window.onYouTubeIframeAPIReady = () => res(window.YT);
+  const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(s);
+});
+async function playReel(clips, title, btn) {
+  closePip();
+  track("reel", location.pathname + location.search);
+  const r = reel = { clips, i: 0, title, player: null, timer: null, done: false };
+  $(".pip-v").innerHTML = `<div id="reelp"></div>`;
+  $("#pip").classList.add("reel"); $("#pip").hidden = false; document.body.classList.add("pip-on", "reel-on");
+  btn?.classList.add("playing");
+  renderReel();
+  const YT = await ytApi();
+  if (reel !== r) return; // closed or replaced while the API loaded
+  const c = clips[0];
+  r.player = new YT.Player("reelp", {
+    host: "https://www.youtube-nocookie.com", videoId: c.vid,
+    playerVars: { autoplay: 1, start: Math.floor(c.start), end: Math.ceil(c.end), rel: 0, playsinline: 1 },
+    events: {
+      onReady: (e) => e.target.playVideo(),
+      onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED && reel === r) nextClip(r.i); },
+    },
+  });
+  // endSeconds doesn't always fire ENDED; the clock is the backstop.
+  r.timer = setInterval(() => {
+    const t = r.player?.getCurrentTime?.(), cur = r.clips[r.i];
+    if (t != null && cur && t >= cur.end - 0.25 && r.player.getPlayerState?.() === YT.PlayerState.PLAYING) nextClip(r.i);
+  }, 250);
+}
+function nextClip(from) { if (reel && reel.i === from) gotoClip(from + 1); }
+function gotoClip(i) {
+  const r = reel; if (!r) return;
+  if (i >= r.clips.length) { r.done = true; r.player?.pauseVideo?.(); return renderReel(); }
+  r.i = Math.max(0, i); r.done = false;
+  const c = r.clips[r.i];
+  r.player?.loadVideoById?.({ videoId: c.vid, startSeconds: c.start, endSeconds: c.end });
+  renderReel();
+}
+function renderReel() {
+  const r = reel; if (!r) return;
+  const c = r.clips[r.i], total = r.clips.reduce((s, x) => s + (x.end - x.start), 0);
+  $(".pip-t").textContent = r.title;
+  $(".pip-open").setAttribute("href", tlink(c.vid, c.start));
+  $(".reel-ui").innerHTML = `<div class="reel-row">
+      <button class="reel-nav" data-d="-1" aria-label="Previous clip"${r.i ? "" : " disabled"}>‹</button>
+      <div class="reel-now"><b>${r.done ? "That's the cut" : `Clip ${r.i + 1} of ${r.clips.length}`}</b> · ${esc(r.done ? `${r.clips.length} clips, ${fmtT(total)}` : c.label)}<div class="note">${esc(r.done ? "Tap a clip to replay it" : `${short(BY.get(c.vid).title)} · ${fmtT(c.start)}`)}</div></div>
+      <button class="reel-nav" data-d="1" aria-label="Next clip"${r.i < r.clips.length - 1 && !r.done ? "" : " disabled"}>›</button>
+    </div>
+    <div class="reel-seg">${r.clips.map((x, k) => `<button class="${k === r.i && !r.done ? "on" : k < r.i || r.done ? "past" : ""}" style="flex:${Math.max(1, x.end - x.start)}" data-k="${k}" title="${esc(x.label)}" aria-label="Clip ${k + 1}"></button>`).join("")}</div>`;
+  document.querySelectorAll(".reel-nav").forEach((b) => b.onclick = () => gotoClip(r.i + Number(b.dataset.d)));
+  document.querySelectorAll(".reel-seg button").forEach((b) => b.onclick = () => gotoClip(Number(b.dataset.k)));
+}
+function stopReel() {
+  if (!reel) return;
+  clearInterval(reel.timer);
+  try { reel.player?.destroy?.(); } catch {}
+  reel = null;
+  $(".reel-ui").innerHTML = ""; $("#pip").classList.remove("reel"); document.body.classList.remove("reel-on");
+}
+
+// ---- watch page
+// Made ahead of time by scripts/gen_moments.mjs. Fetched on the first video page, not at
+// boot, because the file grows with every indexed video.
+let MOMENTS;
+const keyMoments = () => (MOMENTS ??= fetch("/data/moments.json").then((r) => r.json()).catch(() => ({})));
+function watch(vid, t, params = new URLSearchParams()) {
+  const v = BY.get(vid);
+  if (!v) { view.innerHTML = `<div class="status">This video isn't in the collection.</div>`; return; }
+  document.title = `${v.title} - greptube`;
+  markSeen(vid);
+  const related = VIDEOS.filter((x) => x.vid !== vid && x.categories?.some((c) => v.categories?.some((d) => d.id === c.id))).slice(0, 12);
+  const ready = indexed(vid);
+  // The moments of the result card this page was opened from, so jumping between them
+  // doesn't mean going back to the results each time.
+  const q = params.get("q");
+  const moms = (params.get("m") || "").split(",").map((r) => r.split("-").map(Number)).filter(([s, e]) => s >= 0 && e >= s).slice(0, 40);
+  const ctxBox = (cls) => moms.length ? `<div class="box ${cls}"><h4>${q ? `${moms.length} moment${moms.length > 1 ? "s" : ""} matching “${esc(q)}”` : `${moms.length} moment${moms.length > 1 ? "s" : ""} cited in the answer`}</h4>
+      <div class="moments">${moms.map(([s, e]) => `<button class="moment${s === Math.floor(t) ? " on" : ""}" data-t="${s}"><span class="t">${fmtT(s)}</span><span class="note">${e > s ? `to ${fmtT(e)}` : ""}</span></button>`).join("")}</div>
+      ${q ? `<a class="note back" href="/search?q=${encodeURIComponent(q)}">← all results for this search</a>` : ""}</div>` : "";
+  view.innerHTML = `<div class="watch">
+    <div>
+      <div class="player" id="player">${iframe(vid, t)}</div>
+      ${ctxBox("ctx-sm")}
+      <h1>${esc(v.title)}</h1>
+      <div class="meta">${esc(v.channel)} · ${fmtDur(v.duration_s)} · ${v.hn?.recommenders || 0} HN recommenders, ${v.hn?.first_year}–${v.hn?.last_year}</div>
+      <div class="actions">
+        <button id="like" class="${store.has("liked", vid) ? "on" : ""}">♥ Like</button>
+        <button id="later" class="${store.has("later", vid) ? "on" : ""}">Watch later</button>
+        <a class="pill" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener"><button>Open on YouTube</button></a>
+      </div>
+      <div class="box keym" id="keym" data-vid="${vid}" hidden><h4>Key moments <small>· picked by Jockey</small></h4><div class="moments"></div></div>
+      <div class="box"><h4>What it is</h4>${esc(v.summary)}${v.quote?.text ? `<blockquote>“${esc(v.quote.text)}” <span class="note">· HN, ${esc(v.quote.year)}</span></blockquote>` : ""}</div>
+      <div id="hn"></div>
+    </div>
+    <aside class="side">
+      ${ctxBox("ctx-lg")}
+      <div class="box"><h4>Find in this video</h4>
+        ${ready ? `<form id="vfind"><input placeholder="e.g. the part about attention"><button type="submit">Find</button></form><div class="moments" id="vmoments"></div>`
+                : `<p class="note">Still being indexed. Check back soon.</p>`}
+      </div>
+      <div class="box"><h4>Ask this video</h4>
+        ${ready ? `<form id="vask"><input placeholder="e.g. what's the key argument?"><button type="submit">Ask</button></form><div id="vanswer"></div>`
+                : `<p class="note">Still being indexed.</p>`}
+      </div>
+      ${ready ? `<div class="box"><h4>Cut it down</h4><button id="vcut" class="cutbtn">✂️ The best 2 minutes, as one video</button><div id="vcutans"></div></div>` : ""}
+      <div class="upnext">${related.map((r) => `<a href="/watch/${r.vid}"><img loading="lazy" src="${thumb(r.vid)}" alt=""><div><b>${esc(r.title)}</b><div class="note">${esc(r.channel)} · ${fmtDur(r.duration_s)}</div></div></a>`).join("")}</div>
+    </aside></div>`;
+  $("#like").onclick = (e) => e.currentTarget.classList.toggle("on", store.toggle("liked", vid));
+  $("#later").onclick = (e) => e.currentTarget.classList.toggle("on", store.toggle("later", vid));
+  document.querySelectorAll(".ctx-sm .moment, .ctx-lg .moment").forEach((b) => b.onclick = () => seek(vid, Number(b.dataset.t)));
+  loadHN(vid);
+  keyMoments().then((all) => {
+    const box = $("#keym"), list = all[vid];
+    if (!box || box.dataset.vid !== vid || !list?.length) return; // navigated away, or none for this video
+    box.querySelector(".moments").innerHTML = list.map((m) => `<button class="moment${m.t === Math.floor(t) ? " on" : ""}" data-t="${m.t}"><span class="t">${fmtT(m.t)}</span><span>${esc(m.label)}</span></button>`).join("");
+    box.querySelectorAll(".moment").forEach((b) => b.onclick = () => seek(vid, Number(b.dataset.t)));
+    box.hidden = false;
+  });
+  if (!ready) return;
+  $("#vfind").onsubmit = async (e) => {
+    e.preventDefault(); const q = e.target.querySelector("input").value.trim(); if (!q) return;
+    $("#vmoments").innerHTML = `<div class="note">Searching…</div>`;
+    let r;
+    try { r = await fetch("/api/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q: q.slice(0, MAXQ.search), vid }), signal: nav.signal }); }
+    catch (e) { if (e.name === "AbortError") return; r = { ok: false }; }
+    const { results = [] } = r.ok ? await r.json() : {};
+    const label = (m) => m.transcription ? `“${esc(m.transcription)}”` : `<span class="note">${m.modalities?.includes("visual") ? "on screen" : "match"}</span>`;
+    $("#vmoments").innerHTML = !r.ok ? `<div class="note">${r.status === 429 ? "Easy there. Give it a few seconds." : "Search hit a snag. Try again."}</div>`
+      : results.length ? results.slice(0, 8).sort((a, b) => a.start - b.start).map((m) => `<button class="moment" data-t="${m.start}"><span class="t">${fmtT(m.start)}</span><span>${label(m)}</span></button>`).join("") : `<div class="note">No match.</div>`;
+    document.querySelectorAll(".moment").forEach((b) => b.onclick = () => seek(vid, Number(b.dataset.t)));
+  };
+  $("#vcut").onclick = (e) => {
+    e.currentTarget.remove();
+    const turn = document.createElement("div");
+    turn.innerHTML = `<div class="progress"></div><div class="answer"><span class="body cursor"></span></div><div class="sources" hidden></div>`;
+    $("#vcutans").replaceChildren(turn);
+    streamAnswer({ q: "Cut this video down to its best 2 minutes: 4 to 6 clips in playing order.", vid, mode: "cut" }, turn);
+  };
+  $("#vask").onsubmit = (e) => {
+    e.preventDefault(); const q = e.target.querySelector("input").value.trim(); if (!q) return;
+    const turn = document.createElement("div");
+    turn.innerHTML = `<div class="progress"></div><div class="answer"><span class="body cursor"></span></div><div class="sources" hidden></div>`;
+    $("#vanswer").replaceChildren(turn);
+    streamAnswer({ q, vid }, turn);
+  };
+}
+// HN comments and the up-next list live in one small file per video (scripts/build_comments.mjs),
+// fetched after the page renders so the player never waits on them. The category-based list
+// rendered with the page stays if the fetch fails.
+const STANCE = { strong_rec: "Strongly recommends", rec: "Recommends", reference: "Mentions", critical: "Critical", joke: "Joke" };
+const HN_SHOWN = 5;
+async function loadHN(vid) {
+  let d;
+  try { const r = await fetch(`/data/hn/${vid}.json`, { signal: nav.signal }); if (!r.ok) return; d = await r.json(); }
+  catch { return; }
+  if (location.pathname !== `/watch/${vid}`) return;
+  const rel = d.related.map((x) => BY.get(x)).filter(Boolean);
+  const up = $(".upnext");
+  if (rel.length && up) up.innerHTML = `<h4>Up next</h4>` + rel.map((r) => `<a href="/watch/${r.vid}"><img loading="lazy" src="${thumb(r.vid)}" alt=""><div><b>${esc(r.title)}</b><div class="note">${esc(r.channel)} · ${fmtDur(r.duration_s)}</div></div></a>`).join("");
+  if (!d.comments.length) return;
+  const month = (m) => new Date(m + "-01T00:00:00Z").toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+  const text = (t) => esc(t).replaceAll("[VIDEO]", `<span class="vid">▶ this video</span>`).replaceAll("[LINK]", `<span class="note">[link]</span>`);
+  const one = (c, i) => `<div class="hn-c"${i >= HN_SHOWN ? " hidden" : ""}>
+      <div class="who"><b>${esc(c.by)}</b> · ${month(c.m)} · in “${esc(c.story)}”</div>
+      <p>${text(c.text)}</p>
+      <div class="foot"><span class="stance ${esc(c.st)}">${STANCE[c.st] || esc(c.st)}</span><a href="https://news.ycombinator.com/item?id=${Number(c.id)}" target="_blank" rel="noopener">View on HN ↗</a></div>
+    </div>`;
+  const n = d.comments.length;
+  $("#hn").innerHTML = `<div class="box"><h4>${n} comment${n > 1 ? "s" : ""} from Hacker News</h4>${d.comments.map(one).join("")}
+    ${n > HN_SHOWN ? `<button class="hn-more">Show all ${n}</button>` : ""}</div>`;
+  const more = $("#hn .hn-more");
+  if (more) more.onclick = () => { document.querySelectorAll("#hn .hn-c[hidden]").forEach((x) => x.hidden = false); more.remove(); };
+}
+function pip(href, link) {
+  stopReel();
+  const u = new URL(href, location.origin), vid = u.pathname.slice(7), t = Number(u.searchParams.get("t") || 0);
+  $(".pip-t").textContent = `${fmtT(t)} · ${BY.get(vid)?.title || ""}`;
+  $(".pip-open").setAttribute("href", u.pathname + u.search); // the full page keeps the moment list
+  $(".pip-v").innerHTML = iframe(vid, t);
+  $("#pip").hidden = false; document.body.classList.add("pip-on");
+  document.querySelectorAll(".playing").forEach((x) => x.classList.remove("playing"));
+  link?.classList.add("playing");
+}
+function closePip() {
+  stopReel();
+  if ($("#pip").hidden) return;
+  $("#pip").hidden = true; $(".pip-v").innerHTML = ""; document.body.classList.remove("pip-on");
+  document.querySelectorAll(".playing").forEach((x) => x.classList.remove("playing"));
+}
+const iframe = (vid, t) => `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&rel=0&start=${Math.floor(t || 0)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+function seek(vid, t) {
+  $("#player").innerHTML = iframe(vid, t);
+  const u = new URL(location.href); // keep the moment list (m, q) in the URL so a reload or share keeps it
+  u.searchParams.set("t", Math.floor(t));
+  history.replaceState({}, "", u.pathname + u.search);
+  document.querySelectorAll(".moment[data-t]").forEach((b) => b.classList.toggle("on", Math.floor(Number(b.dataset.t)) === Math.floor(t)));
+  if ($("#player").getBoundingClientRect().top < 0) $("#player").scrollIntoView({ behavior: "smooth" });
+}
+
+// ---- personal pages
+function forYou() {
+  const liked = store.get("liked"), hist = store.get("history").slice(-15);
+  const seeds = [...new Set([...liked.slice(-10), ...hist])].map((v) => BY.get(v)).filter(Boolean);
+  document.title = "For you - greptube";
+  // Phones hide Liked and Later from the top nav, so this is their way in.
+  view.innerHTML = `<div class="answer-wrap"><h2 class="qtitle">For you</h2>
+    <p style="color:var(--muted)">Tell Jockey what you're into, or let it read your likes and history (kept only in this browser). It answers with exact segments, not just titles.</p>
+    <p class="note"><a href="/liked"><u>Liked (${liked.length})</u></a> · <a href="/later"><u>Watch later (${store.get("later").length})</u></a></p>
+    <form class="followup" id="fy"><input placeholder="e.g. systems programming, Rust, and how databases really work. 2 hours."><button>Plan my watch</button></form>
+    ${seeds.length ? `<p class="note" style="margin-top:10px">Based on: ${seeds.slice(0, 6).map((v) => esc(short(v.title))).join(", ")}${seeds.length > 6 ? "…" : ""}</p>` : ""}
+    <div id="thread" style="margin-top:22px"></div></div>`;
+  $("#fy").onsubmit = (e) => {
+    e.preventDefault();
+    const typed = e.target.querySelector("input").value.trim();
+    if (!typed && !seeds.length) return;
+    // What they typed leads; history is only a hint about taste, since it includes every
+    // video they merely clicked into.
+    const basis = seeds.length ? ` For context, I recently watched or liked: ${seeds.slice(0, 10).map((v) => `"${v.title}"`).join("; ")}. Treat these as a hint about my taste${typed ? ", secondary to what I said I'm into" : ""}, and don't recommend these exact videos.` : "";
+    const q = `${typed ? `I'm into: ${typed}.` : "Recommend what I should watch next."}${basis} Give me a watch plan with exact segments.`;
+    askPage(q, "watch", { into: $("#thread"), title: typed ? `A watch plan for: ${typed}` : "A watch plan from what you've watched" });
+  };
+}
+function listPage(title, vids, empty) {
+  const list = vids.map((v) => BY.get(v)).filter(Boolean);
+  document.title = `${title} - greptube`;
+  view.innerHTML = `<div class="section-h" style="margin-top:28px"><h2>${title}</h2></div>` + (list.length ? `<div class="grid">${list.map((v) => card(v)).join("")}</div>` : `<div class="status">${empty}</div>`);
+}
+function about() {
+  document.title = "About - greptube";
+  view.innerHTML = `<div class="answer-wrap answer" style="margin-top:28px">
+    <h3>What this is</h3>
+    <p>On Nov 1, 2026, Andrej Karpathy released <a href="https://hackertube.org" target="_blank" rel="noopener"><u>HackerTube</u></a>: 6,454 YouTube videos that Hacker News commenters keep recommending, mined from 20 years of comments, plus the data, free to reuse.</p>
+    <p>HackerTube searches what people <i>said about</i> each video: its title, summary and the HN comments. This site uses that same data and adds what's <i>inside</i> the videos. <a href="https://www.twelvelabs.io/jockey" target="_blank" rel="noopener"><u>Jockey</u></a> watched and listened to the top ${VIDEOS.length}, so you can find a moment by what's said or shown, ask questions across hundreds of hours with every claim cited to the second, and get a watch plan that tells you which 12 minutes of a 3-hour lecture to watch.</p>
+    <h3>Notes</h3>
+    <ul><li>Videos play from YouTube. Likes, history and Watch later stay in your browser. The text of searches and questions is logged without any identifiers, so we can see what people look for.</li>
+    <li>This is the top ${VIDEOS.length} by HN score (plus every Karpathy video). More are coming.</li>
+    <li>Not affiliated with HackerTube. Thank you, @karpathy, for publishing the data.</li></ul>
+    ${OWN_VIDEOS}
+  </div>`;
+}
+boot();
+</script>
+</body>
+</html>
